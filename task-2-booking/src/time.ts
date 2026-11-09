@@ -1,8 +1,7 @@
+// @rev kc-31
 import type { Weekday } from './types.ts';
 
-// Казахстан живёт в одном часовом поясе
 export const TZ_OFFSET = '+05:00';
-
 const WEEKDAYS: Weekday[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 export function toMinutes(hhmm: string): number {
@@ -16,7 +15,21 @@ export function fromMinutes(min: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-// date: 'YYYY-MM-DD'
+export function validDate(value: string | null): value is string {
+  return value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) &&
+    new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+}
+
+export function localDateTime(instant: Date): { date: string; time: string } {
+  const local = new Date(instant.getTime() + 5 * 60 * 60 * 1000).toISOString();
+  return { date: local.slice(0, 10), time: local.slice(11, 16) };
+}
+
+export function slotInstant(date: string, time: string): number {
+  return Date.parse(`${date}T${time}:00${TZ_OFFSET}`);
+}
+
 export function weekday(date: string): Weekday {
   return WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()];
 }
@@ -24,5 +37,5 @@ export function weekday(date: string): Weekday {
 export type Range = { start: number; end: number };
 
 export function overlaps(a: Range, b: Range): boolean {
-  return a.start <= b.end && b.start <= a.end;
+  return a.start < b.end && b.start < a.end;
 }
